@@ -4,15 +4,13 @@ main: com.x416.plugins.kabosu.Kabosu
 authors: [Akoot]
 description: World saver and settings backup
 commands:
-  backup:
-    description: Backs up all of the worlds and configs
-    usage: /backup
-    permission: kabosu.commands.backup
-  save:
-    description: Saves all of the worlds
-    usage: /save
-    permission: kabosu.commands.save
-  reload:
-    description: Reloads the config
-    usage: /kreload
-    permission: kabosu.commands.reload
+  kabosu:
+    description: Kabosu!
+    usage: /kabosu
+    permission: kabosu.commands.kabosu
+  task:
+    description: Tasks!
+    permission: kabosu.command.task
+    usage: |
+      /task create <name> <interval/delay> true|false
+      /task delete|execute <name>

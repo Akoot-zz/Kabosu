@@ -1,36 +1,24 @@
 package com.x416.plugins.kabosu;
 
-import com.x416.plugins.kabosu.commands.BackupCommand;
-import com.x416.plugins.kabosu.commands.ReloadCommand;
-import com.x416.plugins.kabosu.commands.SaveCommand;
-import com.x416.plugins.kabosu.tasks.BackupTask;
-import com.x416.plugins.kabosu.tasks.SaveTask;
+import com.x416.plugins.kabosu.commands.KabosuCommand;
+import com.x416.plugins.kabosu.commands.TaskCommand;
 import org.bukkit.configuration.InvalidConfigurationException;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 public final class Kabosu extends JavaPlugin {
 
-    private BackupTask backupTask;
-    private SaveTask saveTask;
-    private File backupDirectory;
-
-    public BackupTask getBackupTask() {
-        return backupTask;
-    }
-
-    public File getBackupDirectory() {
-        return backupDirectory;
-    }
-
-    public SaveTask getSaveTask() {
-        return saveTask;
-    }
+    public List<Task> tasks;
 
     @Override
     public void onEnable() {
+
+        // Create tasks
+        tasks = new ArrayList<>();
 
         // Load config
         try {
@@ -44,26 +32,31 @@ public final class Kabosu extends JavaPlugin {
             }
         }
 
-        // Generate backup directory
-        backupDirectory = new File(getConfig().getString("backup-directory"));
-        backupDirectory.mkdirs();
-
-        // Setup tasks
-        backupTask = new BackupTask(this);
-        saveTask = new SaveTask(this);
-
-        // Convert minutes to ticks
-        long saveInterval = (long) (getConfig().getInt("intervals.save") * 60) * 20L;
-        long backupInterval = (long) (getConfig().getInt("intervals.backup") * 60) * 20L;
-
-        // Schedule tasks
-        getServer().getScheduler().scheduleAsyncRepeatingTask(this, saveTask, saveInterval, saveInterval);
-        getServer().getScheduler().scheduleAsyncRepeatingTask(this, backupTask, saveInterval, backupInterval);
+        // Start all saved tasks
+        for (String key : getConfig().getKeys(true)) {
+            if (key.matches("tasks\\.\\w+")) {
+                Task task = new Task(this);
+                task.name = key.substring(key.indexOf(".") + 1);
+                task.interval = getConfig().getLong(key + ".interval");
+                task.setCommand(getConfig().getString(key + ".command"));
+                task.repeating = getConfig().getBoolean(key + ".repeating");
+                task.start();
+                tasks.add(task);
+            }
+        }
 
         // Register commands
-        getCommand("save").setExecutor(new SaveCommand(this));
-        getCommand("backup").setExecutor(new BackupCommand(this));
-        getCommand("reload").setExecutor(new ReloadCommand(this));
+        getCommand("kabosu").setExecutor(new KabosuCommand(this));
+        getCommand("task").setExecutor(new TaskCommand(this));
+    }
+
+    public Task getTask(String name) {
+        for (Task task : tasks) {
+            if (task.name.equals(name)) {
+                return task;
+            }
+        }
+        return null;
     }
 
     @Override
